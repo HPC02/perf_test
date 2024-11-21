@@ -120,6 +120,9 @@ using point_double_t = point_t<double>;
 using rect_double_t = rect_t<double>;
 using line_double_t = line_t<double>;
 
+/**
+ * @brief Raw sample data structure which loads from the file.
+ */
 struct sample_data_app_t {
   point_double_t sample_data_{};  //!< sample data's raw data.
   int32_t cid_{};                 //!< sample data's Channel's ID.
