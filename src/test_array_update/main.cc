@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstddef>
 #include <filesystem>
 
 #include <oneapi/tbb/parallel_sort.h>
@@ -86,9 +87,29 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
   }
 
   {
+    struct small_size_ch_config_t {
+      double max_spc_;
+      double cos_x_;
+      double os_x_;
+      double os_y_;
+      double scale_y_;
+      double unit_scale_x_;
+    };
+
+    std::vector<small_size_ch_config_t> simple_ch_configs(chConfigs.size());
+    for (size_t i = 0; i < chConfigs.size(); i++) {
+      const auto& ch_config = chConfigs[i];
+      simple_ch_configs[i].max_spc_ = ch_config.max_spc_;
+      simple_ch_configs[i].cos_x_ = ch_config.cos_x_;
+      simple_ch_configs[i].os_x_ = ch_config.os_x_;
+      simple_ch_configs[i].os_y_ = ch_config.os_y_;
+      simple_ch_configs[i].scale_y_ = ch_config.scale_y_;
+      simple_ch_configs[i].unit_scale_x_ = ch_config.unit_scale_x_;
+    }
+
     auto update_func = [&](sample_data_t& sample) {
       const auto cid = sample.cid_;
-      const auto& ch_config = chConfigs[cid];
+      const auto& ch_config = simple_ch_configs[cid];
       const auto& sample_range = sampleDataConfig.ch_limits_[cid];
 
       const auto ax = sample.aptr_->sample_data_.x_;
@@ -107,20 +128,25 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
     const auto data_num = ds.ds_.size();
     const auto thd_num = std::thread::hardware_concurrency();
     if (data_num > kParallelThreshold) {
-      tbb::parallel_for(
-        tbb::blocked_range<size_t>(0, data_num, data_num / thd_num),
-        [&](const tbb::blocked_range<size_t>& r) {
-          for (size_t i = r.begin(); i != r.end(); i++) {
-            update_func(ds.ds_[i]);
-          }
-        },
-        tbb::static_partitioner{});
+      for (size_t i = 0; i < 100; i++) {
+        tbb::affinity_partitioner ap;
+        tbb::parallel_for(
+          tbb::blocked_range<size_t>(0, data_num, data_num / thd_num),
+          [&](const tbb::blocked_range<size_t>& r) {
+            for (size_t i = r.begin(); i != r.end(); i++) {
+              update_func(ds.ds_[i]);
+            }
+          },
+          ap /* tbb::static_partitioner{} */);
+      }
     } else {
-      std::for_each(ds.ds_.begin(), ds.ds_.end(), update_func);
+      for (size_t i = 0; i < 100; i++) {
+        std::for_each(ds.ds_.begin(), ds.ds_.end(), update_func);
+      }
     }
 
-    tbb::parallel_sort(ds.ds_.begin(), ds.ds_.end(),
-                       [](const sample_data_t& a, const sample_data_t& b) { return (a.mapped_pos_.x_ < b.mapped_pos_.x_); });
+    /*tbb::parallel_sort(ds.ds_.begin(), ds.ds_.end(),
+                       [](const sample_data_t& a, const sample_data_t& b) { return (a.mapped_pos_.x_ < b.mapped_pos_.x_); });*/
   }
 }
 
