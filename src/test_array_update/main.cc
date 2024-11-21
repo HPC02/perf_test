@@ -2,6 +2,7 @@
 #include <filesystem>
 
 #include <oneapi/tbb/parallel_sort.h>
+#include <oneapi/tbb/partitioner.h>
 #include <tbb/parallel_for.h>
 #include <tbb/tbb.h>
 
@@ -103,15 +104,17 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
       sample.mapped_pos_ = {mapped_x, mapped_y};
     };
 
-    if (ds.ds_.size() > kParallelThreshold) {
+    const auto data_num = ds.ds_.size();
+    const auto thd_num = std::thread::hardware_concurrency();
+    if (data_num > kParallelThreshold) {
       tbb::parallel_for(
-        tbb::blocked_range<size_t>(0, ds.ds_.size()),
+        tbb::blocked_range<size_t>(0, data_num, data_num / thd_num),
         [&](const tbb::blocked_range<size_t>& r) {
           for (size_t i = r.begin(); i != r.end(); i++) {
             update_func(ds.ds_[i]);
           }
         },
-        tbb::auto_partitioner());
+        tbb::static_partitioner{});
     } else {
       std::for_each(ds.ds_.begin(), ds.ds_.end(), update_func);
     }
