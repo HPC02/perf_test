@@ -128,7 +128,7 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
     const auto data_num = ds.ds_.size();
     const auto thd_num = std::thread::hardware_concurrency();
     if (data_num > kParallelThreshold) {
-      for (size_t i = 0; i < 100; i++) {
+      for (size_t i = 0; i < 100; i++) {  // test loop
         tbb::affinity_partitioner ap;
         tbb::parallel_for(
           tbb::blocked_range<size_t>(0, data_num, data_num / thd_num),

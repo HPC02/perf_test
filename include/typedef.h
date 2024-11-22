@@ -130,10 +130,9 @@ struct sample_data_app_t {
 };
 
 /**
- * @brief Sample data structure.
+ * @brief Railway sample data structure.
  * @details Sample data structure contains sample point readed from the file,
- * mapped-xy calculated by the R/W configures, and display-xy calculated by the
- * chart configures. @see ch_config_t
+ * mapped-xy calculated by the R/W configures. @see ch_config_t
  */
 struct sample_data_t {
   int32_t cid_{};                //!< sample data's Channel's ID.
@@ -146,9 +145,9 @@ struct sample_data_t {
  * @details Sample dataset structure contains a vector of sample data.
  */
 struct sample_dataset_t {
-  std::vector<sample_data_t> ds_;                   //!< sample dataset's sample data vector.
-  std::shared_ptr<sample_data_app_t[]> ds_append_;  //!< sample dataset's sample data append vector.
-  size_t array_size_{0};                            //!< sample dataset's sample data array size.
+  std::vector<sample_data_t> ds_;                   //!< mapped sample data.
+  std::shared_ptr<sample_data_app_t[]> ds_append_;  //!< raw sample data.
+  size_t array_size_{0};                            //!< sample data size.
 };
 
 inline void to_json(ordered_json_t& j, const sample_data_t& d) {
