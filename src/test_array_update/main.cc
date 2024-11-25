@@ -107,7 +107,7 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
       simple_ch_configs[i].unit_scale_x_ = ch_config.unit_scale_x_;
     }
 
-    auto update_func = [&](sample_data_t& sample) {
+    auto update_func = [&](sample_data_t& sample) noexcept(true) {
       const auto cid = sample.cid_;
       const auto& ch_config = simple_ch_configs[cid];
       const auto& sample_range = sampleDataConfig.ch_limits_[cid];
@@ -126,21 +126,21 @@ void updateDataXYMapData(const sample_data_config_t& sampleDataConfig, const std
     };
 
     const auto data_num = ds.ds_.size();
-    const auto thd_num = std::thread::hardware_concurrency();
+    //const auto thd_num = std::thread::hardware_concurrency();
     if (data_num > kParallelThreshold) {
-      for (size_t i = 0; i < 100; i++) {  // test loop
-        tbb::affinity_partitioner ap;
+      for (size_t i = 0; i < 500; i++) {  // test loop
+        //tbb::affinity_partitioner ap;
         tbb::parallel_for(
-          tbb::blocked_range<size_t>(0, data_num, data_num / thd_num),
+          tbb::blocked_range<size_t>(0, data_num /*, data_num / thd_num*/),
           [&](const tbb::blocked_range<size_t>& r) {
             for (size_t i = r.begin(); i != r.end(); i++) {
               update_func(ds.ds_[i]);
             }
           },
-          ap /* tbb::static_partitioner{} */);
+          tbb::static_partitioner{});
       }
     } else {
-      for (size_t i = 0; i < 100; i++) {
+      for (size_t i = 0; i < 500; i++) {
         std::for_each(ds.ds_.begin(), ds.ds_.end(), update_func);
       }
     }
