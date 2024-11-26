@@ -10,7 +10,14 @@
 #include <spdlog/spdlog.h>
 
 #include "3rd_utils.h"
+
+#define MMAP_CPPLIB false
+
+#if MMAP_CPPLIB
+#include "mmaplib.h"
+#else
 #include "mio/mmap.hpp"
+#endif
 
 #include "sample_data_config.h"
 
@@ -38,6 +45,13 @@ sample_dataset_t loadDataXYFromFile(const std::string& filename) {
     return ds;
   }
 
+#if MMAP_CPPLIB
+  auto src_mmap = mmaplib::mmap(filename.c_str());
+  if (!src_mmap.is_open()) {
+    SPDLOG_ERROR("Failed to mmap file: {}", u8_filename.string());
+    return ds;
+  }
+#else
   std::error_code error;
   mio::mmap_source src_mmap = mio::make_mmap_source(filename, 0, mio::map_entire_file, error);
   if (error) {
@@ -45,6 +59,7 @@ sample_dataset_t loadDataXYFromFile(const std::string& filename) {
     SPDLOG_ERROR("Failed to mmap file: {} - {}", u8_filename.string(), errmsg);
     return ds;
   }
+#endif
 
   const size_t num_samples = (src_mmap.size() / sample_size);
   ds.ds_append_ = std::make_shared<sample_data_app_t[]>(num_samples);

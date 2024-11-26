@@ -1,5 +1,12 @@
 # README #
 
+## 0. Overview ##
+
+Used 3rd-party libraries:
+
+- [github -- mio](https://github.com/vimpunk/mio)
+- [github -- cpp-mmaplib](https://github.com/yhirose/cpp-mmaplib)
+
 ## 1. test_array_update -- Memory Bound Test ##
 
 This test load large number of samples from data file into a `vector`(named `ds_append_`).
